@@ -1,9 +1,13 @@
 #!/usr/bin/bash
 
 PATH_TO_SUBMISSION_FOLDER=$1
-# PATH_TO_TARGET_FOLDER=$2
+PATH_TO_TARGET_FOLDER=$2
 # PATH_TO_TEST_FOLDER=$3
 # PATH_TO_ANSWER_FOLDER=$4
+
+# make target directory with the subdirectories
+
+mkdir -p "$PATH_TO_TARGET_FOLDER/C" "$PATH_TO_TARGET_FOLDER/C++" "$PATH_TO_TARGET_FOLDER/Java" "$PATH_TO_TARGET_FOLDER/Python"
 
 #unzip all the files in the submission folder
 for zipped_file in "$PATH_TO_SUBMISSION_FOLDER"/*
