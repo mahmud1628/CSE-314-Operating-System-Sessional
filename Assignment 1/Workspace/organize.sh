@@ -9,7 +9,7 @@ PATH_TO_TARGET_FOLDER=$2
 
 mkdir -p "$PATH_TO_TARGET_FOLDER/C" "$PATH_TO_TARGET_FOLDER/C++" "$PATH_TO_TARGET_FOLDER/Java" "$PATH_TO_TARGET_FOLDER/Python"
 
-#unzip all the files in the submission folder
+# #unzip all the files in the submission folder
 for zipped_file in "$PATH_TO_SUBMISSION_FOLDER"/*
 do
     # echo "Processing $zipped_file"
@@ -18,6 +18,39 @@ do
     # Unzip the file
     unzip "$zipped_file" -d "$PATH_TO_SUBMISSION_FOLDER"
     rm "$zipped_file"
+done
+
+# move the files to the target directory
+for directory in "$PATH_TO_SUBMISSION_FOLDER"/*
+do
+    student_id="${directory: -7}"
+    # echo $student_id
+    code_file=$(find "$directory" -type f \( -name "*.c" -o -name "*.cpp" -o -name "*.java" -o -name "*.py" \))
+    # echo $code_file
+    file_extension="${code_file##*.}"
+    # echo $file_extension
+
+    case $file_extension in
+        c)  
+            mkdir -p "$PATH_TO_TARGET_FOLDER/C/$student_id"
+            cp "$code_file" "$PATH_TO_TARGET_FOLDER/C/$student_id/main.c"
+            ;;
+        cpp)
+            mkdir -p "$PATH_TO_TARGET_FOLDER/C++/$student_id"
+            cp "$code_file" "$PATH_TO_TARGET_FOLDER/C++/$student_id/main.cpp"
+            ;;
+        java)
+            mkdir -p "$PATH_TO_TARGET_FOLDER/Java/$student_id"
+            cp "$code_file" "$PATH_TO_TARGET_FOLDER/Java/$student_id/Main.java"
+            ;;
+        py)
+            mkdir -p "$PATH_TO_TARGET_FOLDER/Python/$student_id"
+            cp "$code_file" "$PATH_TO_TARGET_FOLDER/Python/$student_id/main.py"
+            ;;
+        *)
+            echo "Unknown file type: $file_extension"
+            ;;
+    esac
 done
 
 
