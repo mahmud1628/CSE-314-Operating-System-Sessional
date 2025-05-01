@@ -5,6 +5,27 @@ PATH_TO_TARGET_FOLDER=$2
 PATH_TO_TEST_FOLDER=$3
 PATH_TO_ANSWER_FOLDER=$4
 
+is_v_provided=false
+is_noexecute_provided=false
+is_nolc_provided=false
+is_nocc_provided=false
+is_nofc_provided=false
+
+for argument in $*
+do
+    if [[ $argument == "-v" ]]; then
+        is_v_provided=true
+    elif [[ $argument == "-noexecute" ]]; then
+        is_noexecute_provided=true
+    elif [[ $argument == "-nolc" ]]; then
+        is_nolc_provided=true
+    elif [[ $argument == "-nocc" ]]; then
+        is_nocc_provided=true
+    elif [[ $argument == "-nofc" ]]; then
+        is_nofc_provided=true
+    fi
+done
+
 declare -A student_names
 declare -A student_languages
 declare -a student_ids
