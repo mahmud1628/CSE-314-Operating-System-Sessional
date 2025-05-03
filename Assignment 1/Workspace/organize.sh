@@ -181,36 +181,36 @@ fi
 
 
 # CSV file
-
-echo -n "student_id, student_name, language" > "$PATH_TO_TARGET_FOLDER/results.csv"
+PATH_TO_RESULT="$PATH_TO_TARGET_FOLDER/result.csv"
+echo -n "student_id,student_name,language" > "$PATH_TO_RESULT"
 
 if [[ $is_noexecute_provided == false ]]; then
-    echo -n ", matched, not_matched" >> "$PATH_TO_TARGET_FOLDER/results.csv"
+    echo -n ",matched,not_matched" >> "$PATH_TO_RESULT"
 fi
 
 if [[ $is_nolc_provided == false ]]; then
-    echo -n ", line_count" >> "$PATH_TO_TARGET_FOLDER/results.csv"
+    echo -n ",line_count" >> "$PATH_TO_RESULT"
 fi
 
 if [[ $is_nocc_provided == false ]]; then
-    echo -n ", comment_count" >> "$PATH_TO_TARGET_FOLDER/results.csv"
+    echo -n ",comment_count" >> "$PATH_TO_RESULT"
 fi
 
-echo "" >> "$PATH_TO_TARGET_FOLDER/results.csv"
+echo "" >> "$PATH_TO_RESULT"
 
 for student_id in "${student_ids[@]}"
 do
-    echo -n "$student_id , ${student_names[$student_id]} , ${student_languages[$student_id]}" >> "$PATH_TO_TARGET_FOLDER/results.csv"
+    echo -n "$student_id,"\"${student_names[$student_id]}\"",${student_languages[$student_id]}" >> "$PATH_TO_RESULT"
 
     if [[ $is_noexecute_provided == false ]]; then
-        echo -n ", ${passed_test_counts[$student_id]} , ${failed_test_counts[$student_id]}" >> "$PATH_TO_TARGET_FOLDER/results.csv"
+        echo -n ",${passed_test_counts[$student_id]},${failed_test_counts[$student_id]}" >> "$PATH_TO_RESULT"
     fi
     if [[ $is_nolc_provided == false ]]; then
-        echo -n ", ${line_counts[$student_id]}" >> "$PATH_TO_TARGET_FOLDER/results.csv"
+        echo -n ",${line_counts[$student_id]}" >> "$PATH_TO_RESULT"
     fi
     if [[ $is_nocc_provided == false ]]; then
-        echo -n ", ${comment_counts[$student_id]}" >> "$PATH_TO_TARGET_FOLDER/results.csv"
+        echo -n ",${comment_counts[$student_id]}" >> "$PATH_TO_RESULT"
     fi
-    echo "" >> "$PATH_TO_TARGET_FOLDER/results.csv"
+    echo "" >> "$PATH_TO_RESULT"
 done
 
