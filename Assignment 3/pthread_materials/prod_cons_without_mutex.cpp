@@ -2,19 +2,20 @@
 #include<pthread.h>
 #include<semaphore.h>
 #include<queue>
+#include <unistd.h>
 
 using namespace std;
 
 
 //semaphore to control sleep and wake up
-sem_t empty;
+sem_t emt;
 sem_t full;
 queue<int> q;
 
 
 void init_semaphore()
 {
-	sem_init(&empty,0,5);
+	sem_init(&emt,0,5);
 	sem_init(&full,0,0);
 }
 
@@ -24,7 +25,7 @@ void * ProducerFunc(void * arg)
 	int i;
 	for(i=1;i<=10;i++)
 	{
-		sem_wait(&empty);
+		sem_wait(&emt);
 
 			
 		sleep(1);
@@ -36,6 +37,7 @@ void * ProducerFunc(void * arg)
 	
 		sem_post(&full);
 	}
+	return NULL;
 }
 
 void * ConsumerFunc(void * arg)
@@ -54,8 +56,9 @@ void * ConsumerFunc(void * arg)
 		printf("consumer consumed item %d\n",item);	
 
 			
-		sem_post(&empty);
+		sem_post(&emt);
 	}
+	return NULL;
 }
 
 
@@ -69,8 +72,8 @@ int main(void)
 	
 	init_semaphore();
 	
-	char * message1 = "i am producer";
-	char * message2 = "i am consumer";	
+	const char * message1 = "i am producer";
+	const char * message2 = "i am consumer";	
 	
 	pthread_create(&thread1,NULL,ProducerFunc,(void*)message1 );
 	pthread_create(&thread2,NULL,ConsumerFunc,(void*)message2 );
