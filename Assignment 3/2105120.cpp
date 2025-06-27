@@ -149,10 +149,11 @@ void * operative_function(void *arg)
 
     if(is_leader)
     {
+        write_output("Unit " + to_string(unit_id) + " has completed document recreation phase at time " + to_string(get_elapased_time()) + "\n");
         acquire_log_book_lock();
         operations_completed++;
         usleep(y * 1000000); // Simulate log book writing time
-        write_output("Unit " + to_string(unit_id) + " has completed document recreation phase at time " + to_string(get_elapased_time()) + "\n");
+        write_output("Unit " + to_string(unit_id) + " has completed intelligence distribution at time " + to_string(get_elapased_time()) + "\n");
         release_log_book_lock();
     }
 
