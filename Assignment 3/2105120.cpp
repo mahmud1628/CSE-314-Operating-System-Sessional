@@ -5,6 +5,7 @@
 #include <chrono>
 #include <random>
 #include <unistd.h>
+#include <semaphore.h>
 
 #define NUM_TYPEWRITTING_STATIONS 4
 #define NUMBER_OF_INTELLIGENT_STAFFS 2
@@ -21,15 +22,26 @@ int operations_completed; // global variable to track number of completed operat
 int current_staff_count = 0; // global variable to track number of intelligent staffs reviewing the log book
 
 auto start_time = chrono::high_resolution_clock::now();
-pthread_mutex_t output_mutex, log_book_lock, staff_count_lock;
+pthread_mutex_t output_mutex, staff_count_lock;
 pthread_mutex_t station_lock[NUM_TYPEWRITTING_STATIONS];
 pthread_barrier_t *unit_barriers;
+sem_t log_book_lock; // Semaphore for log book access
 
 std::random_device rd;
 std::mt19937 generator(rd());
 
 std::poisson_distribution<int> operative_dist(OPERATIVE_LAMBDA);
 std::poisson_distribution<int> staff_dist(STAFF_LAMBDA);
+
+void acquire_log_book_lock()
+{
+    sem_wait(&log_book_lock);
+}
+
+void release_log_book_lock()
+{
+    sem_post(&log_book_lock);
+}
 
 void init_locks()
 {
@@ -38,8 +50,19 @@ void init_locks()
         pthread_mutex_init(&station_lock[i], nullptr);
     }
     pthread_mutex_init(&output_mutex, nullptr);
-    pthread_mutex_init(&log_book_lock, nullptr);
     pthread_mutex_init(&staff_count_lock, nullptr);
+    sem_init(&log_book_lock, 0, 1);
+}
+
+void destroy_locks()
+{
+    for(int i = 0; i < NUM_TYPEWRITTING_STATIONS; i++)
+    {
+        pthread_mutex_destroy(&station_lock[i]);
+    }
+    pthread_mutex_destroy(&output_mutex);
+    pthread_mutex_destroy(&staff_count_lock);
+    sem_destroy(&log_book_lock);
 }
 
 void init_barriers(int c)
@@ -49,6 +72,15 @@ void init_barriers(int c)
     {
         pthread_barrier_init(&unit_barriers[i], NULL, M);
     }
+}
+
+void destroy_barriers(int c)
+{
+    for(int i = 0; i < c; i++)
+    {
+        pthread_barrier_destroy(&unit_barriers[i]);
+    }
+    delete[] unit_barriers;
 }
 
 long long get_elapased_time()
@@ -98,10 +130,10 @@ void * operative_function(void *arg)
 
     if(is_leader)
     {
-        pthread_mutex_lock(&log_book_lock);
+        acquire_log_book_lock();
         operations_completed++;
         usleep(y * 1000000); // Simulate log book writing time
-        pthread_mutex_unlock(&log_book_lock);
+        release_log_book_lock();
         write_output("Unit " + to_string(unit_id) + " has completed document recreation phase at time " + to_string(get_elapased_time()) + "\n");
     }
 
@@ -121,7 +153,7 @@ void * staff_function(void * arg)
         current_staff_count++;
         if(current_staff_count == 1)
         {
-            pthread_mutex_lock(&log_book_lock); // Lock the log book if this is the first staff
+            acquire_log_book_lock(); // Lock the log book if this is the first staff
         }
         pthread_mutex_unlock(&staff_count_lock);
 
@@ -136,7 +168,7 @@ void * staff_function(void * arg)
         current_staff_count--;
         if(current_staff_count == 0)
         {
-            pthread_mutex_unlock(&log_book_lock); // Unlock the log book if this is the last staff
+            release_log_book_lock(); // Unlock the log book if this is the last staff
         }
         pthread_mutex_unlock(&staff_count_lock);
     }
@@ -207,9 +239,14 @@ int main()
 
     for(int i = 0; i < NUMBER_OF_INTELLIGENT_STAFFS; i++)
     {
-       // pthread_cancel(staff_threads[i]); // Cancel staff threads as they run indefinitely
         pthread_join(staff_threads[i], NULL);
     }
+
+    destroy_locks(); // Destroy mutex locks
+    destroy_barriers(c); // Destroy barriers
+
+    outfile.close();
+    infile.close();
 
     return 0;
 }
