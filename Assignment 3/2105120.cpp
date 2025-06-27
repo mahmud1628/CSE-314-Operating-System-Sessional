@@ -6,6 +6,7 @@
 #include <random>
 #include <unistd.h>
 #include <semaphore.h>
+#include <sched.h>
 
 #define NUM_TYPEWRITTING_STATIONS 4
 #define NUMBER_OF_INTELLIGENT_STAFFS 2
@@ -26,12 +27,30 @@ pthread_mutex_t output_mutex, staff_count_lock;
 pthread_mutex_t station_lock[NUM_TYPEWRITTING_STATIONS];
 pthread_barrier_t *unit_barriers;
 sem_t log_book_lock; // Semaphore for log book access
+pthread_attr_t staff_attr, operative_attr;
+struct sched_param staff_sched_param, operative_sched_param;
 
 std::random_device rd;
 std::mt19937 generator(rd());
 
 std::poisson_distribution<int> operative_dist(OPERATIVE_LAMBDA);
 std::poisson_distribution<int> staff_dist(STAFF_LAMBDA);
+
+void init_attributes()
+{
+    pthread_attr_init(&staff_attr);
+    pthread_attr_setschedpolicy(&staff_attr, SCHED_RR);
+    pthread_attr_setinheritsched(&staff_attr, PTHREAD_EXPLICIT_SCHED);
+    int max_priority = sched_get_priority_max(SCHED_RR);
+    staff_sched_param.sched_priority = max_priority;
+    pthread_attr_setschedparam(&staff_attr, &staff_sched_param);
+
+    pthread_attr_init(&operative_attr);
+    pthread_attr_setschedpolicy(&operative_attr, SCHED_RR);
+    pthread_attr_setinheritsched(&operative_attr, PTHREAD_EXPLICIT_SCHED);
+    operative_sched_param.sched_priority = max_priority - 1; // Operatives have lower priority than staff
+    pthread_attr_setschedparam(&operative_attr, &operative_sched_param);
+}
 
 void acquire_log_book_lock()
 {
@@ -133,8 +152,8 @@ void * operative_function(void *arg)
         acquire_log_book_lock();
         operations_completed++;
         usleep(y * 1000000); // Simulate log book writing time
-        release_log_book_lock();
         write_output("Unit " + to_string(unit_id) + " has completed document recreation phase at time " + to_string(get_elapased_time()) + "\n");
+        release_log_book_lock();
     }
 
     return nullptr;
@@ -205,6 +224,7 @@ int main()
     }
     init_locks(); // Initialize mutex locks
     init_barriers(c); // Initialize barriers for each unit
+    init_attributes(); // Initialize thread attributes and scheduling policies
 
     pthread_t operative_threads[N];
     pthread_t staff_threads[NUMBER_OF_INTELLIGENT_STAFFS];
@@ -224,12 +244,12 @@ int main()
 
     for(int i = 0; i < N; i++)
     {
-        pthread_create(&operative_threads[i], NULL, operative_function, (void *) &operative_ids[i]);
+        pthread_create(&operative_threads[i], &operative_attr, operative_function, (void *) &operative_ids[i]);
     }
 
     for(int i = 0; i < NUMBER_OF_INTELLIGENT_STAFFS; i++)
     {
-        pthread_create(&staff_threads[i], NULL, staff_function, (void *) &staff_ids[i]);
+        pthread_create(&staff_threads[i], &staff_attr, staff_function, (void *) &staff_ids[i]);
     }
 
     for(int i = 0; i < N; i++)
