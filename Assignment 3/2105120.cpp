@@ -102,7 +102,7 @@ void * operative_function(void *arg)
         operations_completed++;
         usleep(y * 1000000); // Simulate log book writing time
         pthread_mutex_unlock(&log_book_lock);
-        write_output("Unit " + to_string(unit_id) + " has completed document recreation phase at time " + to_string(get_elapased_time()) + " leader is " + to_string(operative_id) + "\n");
+        write_output("Unit " + to_string(unit_id) + " has completed document recreation phase at time " + to_string(get_elapased_time()) + "\n");
     }
 
     return nullptr;
