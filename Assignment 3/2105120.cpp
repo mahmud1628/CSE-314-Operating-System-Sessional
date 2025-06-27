@@ -196,10 +196,15 @@ void * staff_function(void * arg)
 }
 
 
-int main()
+int main(int argc, char *argv[])
 {
     string input_file = "in.txt";
     string output_file = "out.txt";
+    if(argc == 3)
+    {
+        input_file = argv[1];
+        output_file = argv[2];
+    }
     infile.open(input_file);
     if(!infile.is_open())
     {
