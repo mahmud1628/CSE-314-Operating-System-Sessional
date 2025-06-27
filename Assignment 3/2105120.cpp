@@ -18,7 +18,7 @@ ofstream outfile;
 
 int N,M,x,y,c;
 int operations_completed; // global variable to track number of completed operations
-int current_staff_count = 0; // global variable to track number of intelligent staffs
+int current_staff_count = 0; // global variable to track number of intelligent staffs reviewing the log book
 
 auto start_time = chrono::high_resolution_clock::now();
 pthread_mutex_t output_mutex, log_book_lock, staff_count_lock;
@@ -42,6 +42,15 @@ void init_locks()
     pthread_mutex_init(&staff_count_lock, nullptr);
 }
 
+void init_barriers(int c)
+{
+    unit_barriers = new pthread_barrier_t[c];
+    for(int i = 0; i < c; i++)
+    {
+        pthread_barrier_init(&unit_barriers[i], NULL, M);
+    }
+}
+
 long long get_elapased_time()
 {
     auto end_time = chrono::high_resolution_clock::now();
@@ -51,10 +60,10 @@ long long get_elapased_time()
 
 void write_output(const string &output)
 {
-    pthread_mutex_lock(&output_mutex); // Lock the mutex for output
+    pthread_mutex_lock(&output_mutex);
     outfile << output;
     outfile.flush(); // Ensure the output is written immediately
-    pthread_mutex_unlock(&output_mutex); // Unlock the mutex after output
+    pthread_mutex_unlock(&output_mutex);
 }
 
 int get_random_delay_for_operative() {
@@ -89,10 +98,10 @@ void * operative_function(void *arg)
 
     if(is_leader)
     {
-        pthread_mutex_lock(&log_book_lock); // Lock the log book
-        operations_completed++; // Increment the number of completed operations
+        pthread_mutex_lock(&log_book_lock);
+        operations_completed++;
         usleep(y * 1000000); // Simulate log book writing time
-        pthread_mutex_unlock(&log_book_lock); // Unlock the log book
+        pthread_mutex_unlock(&log_book_lock);
         write_output("Unit " + to_string(unit_id) + " has completed document recreation phase at time " + to_string(get_elapased_time()) + " leader is " + to_string(operative_id) + "\n");
     }
 
@@ -105,7 +114,7 @@ void * staff_function(void * arg)
 
     while(1)
     {
-        int random_time = get_random_delay_for_staff() % 2000 + 1; // Random time between 1 and 5000 ms
+        int random_time = get_random_delay_for_staff() % 2000 + 1; // Random time between 1 and 2000 ms
         usleep(random_time * 1000); // Convert to microseconds for usleep
 
         pthread_mutex_lock(&staff_count_lock);
@@ -114,7 +123,7 @@ void * staff_function(void * arg)
         {
             pthread_mutex_lock(&log_book_lock); // Lock the log book if this is the first staff
         }
-        pthread_mutex_unlock(&staff_count_lock); // Unlock the staff count mutex
+        pthread_mutex_unlock(&staff_count_lock);
 
         write_output("Intelligent staff " + to_string(staff_id) + " began reviewing logbook at time " + to_string(get_elapased_time()) + ". Operations completed = " + to_string(operations_completed) + "\n");
 
@@ -129,7 +138,7 @@ void * staff_function(void * arg)
         {
             pthread_mutex_unlock(&log_book_lock); // Unlock the log book if this is the last staff
         }
-        pthread_mutex_unlock(&staff_count_lock); // Unlock the staff count mutex
+        pthread_mutex_unlock(&staff_count_lock);
     }
     return nullptr;   
 }
@@ -163,12 +172,7 @@ int main()
         return 0;
     }
     init_locks(); // Initialize mutex locks
-
-    unit_barriers = new pthread_barrier_t[c]; // Create barriers for each unit
-    for(int i = 0; i < c; i++)
-    {
-        pthread_barrier_init(&unit_barriers[i], NULL, M);
-    }
+    init_barriers(c); // Initialize barriers for each unit
 
     pthread_t operative_threads[N];
     pthread_t staff_threads[NUMBER_OF_INTELLIGENT_STAFFS];
