@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <sched.h>
+#include <cstring>
 
 #define NUM_TYPEWRITTING_STATIONS 4
 #define NUMBER_OF_INTELLIGENT_STAFFS 2
@@ -112,8 +113,8 @@ long long get_elapased_time()
 void write_output(const string &output)
 {
     pthread_mutex_lock(&output_mutex);
-    outfile << output;
-    outfile.flush(); // Ensure the output is written immediately
+    cout << output;
+    //outfile.flush(); // Ensure the output is written immediately
     pthread_mutex_unlock(&output_mutex);
 }
 
@@ -250,7 +251,12 @@ int main(int argc, char *argv[])
 
     for(int i = 0; i < N; i++)
     {
-        pthread_create(&operative_threads[i], &operative_attr, operative_function, (void *) &operative_ids[i]);
+        int ret = pthread_create(&operative_threads[i], &operative_attr, operative_function, (void *) &operative_ids[i]);
+        if(ret != 0)
+        {
+            cerr << "Error creating operative thread " << i + 1 << ": " << strerror(ret) << endl;
+            return 1;
+        }
     }
 
     for(int i = 0; i < NUMBER_OF_INTELLIGENT_STAFFS; i++)
